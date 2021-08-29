@@ -2,6 +2,7 @@ Plan(
     initial_agents: [
         "swordsman",
         "spearman",
+        "spearman",
     ],
     nodes: [
         (
