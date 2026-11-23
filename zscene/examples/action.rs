@@ -12,19 +12,12 @@ use zscene::{self, action, Action, Boxed, Layer, Scene, Sprite};
 
 #[derive(Debug)]
 pub enum Err {
-    File(mq::file::FileError),
-    Font(mq::text::FontError),
+    Mq(mq::Error),
 }
 
-impl From<mq::file::FileError> for Err {
-    fn from(err: mq::file::FileError) -> Self {
-        Err::File(err)
-    }
-}
-
-impl From<mq::text::FontError> for Err {
-    fn from(err: mq::text::FontError) -> Self {
-        Err::Font(err)
+impl From<mq::Error> for Err {
+    fn from(err: mq::Error) -> Self {
+        Err::Mq(err)
     }
 }
 
@@ -72,7 +65,7 @@ impl State {
     }
 
     fn action_demo_move(&self) -> Box<dyn Action> {
-        let mut sprite = Sprite::from_texture(self.assets.texture, 0.5);
+        let mut sprite = Sprite::from_texture(&self.assets.texture, 0.5);
         sprite.set_pos(Vec2::new(0.0, -1.0));
         let delta = Vec2::new(0.0, 1.5);
         let move_duration = Duration::from_millis(2_000);
@@ -85,7 +78,7 @@ impl State {
 
     fn action_demo_show_hide(&self) -> Box<dyn Action> {
         let mut sprite = {
-            let mut sprite = Sprite::from_text(("some text", self.assets.font), 0.1);
+            let mut sprite = Sprite::from_text(("some text", &self.assets.font), 0.1);
             sprite.set_pos(Vec2::new(0.0, 0.0));
             sprite.set_scale(2.0); // just testing set_size method
             let scale = sprite.scale();
@@ -110,7 +103,11 @@ impl State {
 fn update_aspect_ratio() {
     let aspect_ratio = window::screen_width() / window::screen_height();
     let coordinates = Rect::new(-aspect_ratio, -1.0, aspect_ratio * 2.0, 2.0);
-    set_camera(&Camera2D::from_display_rect(coordinates));
+    let mut camera = Camera2D::from_display_rect(coordinates);
+    // macroquad 0.4 flips the Y axis of cameras that draw to the screen;
+    // flip it back so that +Y keeps pointing down.
+    camera.zoom.y = -camera.zoom.y;
+    set_camera(&camera);
 }
 
 #[mq::main("ZScene: Actions Demo")]

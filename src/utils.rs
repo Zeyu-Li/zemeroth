@@ -78,12 +78,15 @@ pub fn aspect_ratio() -> f32 {
 }
 
 pub fn make_and_set_camera(aspect_ratio: f32) -> Camera2D {
-    let camera = Camera2D::from_display_rect(Rect {
+    let mut camera = Camera2D::from_display_rect(Rect {
         x: -aspect_ratio,
         y: -1.0,
         w: aspect_ratio * 2.0,
         h: 2.0,
     });
+    // macroquad 0.4 flips the Y axis of cameras that draw to the screen;
+    // flip it back so that +Y keeps pointing down.
+    camera.zoom.y = -camera.zoom.y;
     set_camera(&camera);
     camera
 }

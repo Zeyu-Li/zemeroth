@@ -21,7 +21,7 @@ pub struct GeneralInfo {
 
 impl GeneralInfo {
     pub fn new(title: &str, lines: &[String]) -> ZResult<Self> {
-        let font = assets::get().font;
+        let font = &assets::get().font;
         let mut gui = ui::Gui::new();
         let h = utils::line_heights().normal;
         let mut layout = Box::new(ui::VLayout::new().stretchable(true));

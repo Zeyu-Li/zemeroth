@@ -8,7 +8,7 @@ enum Message {
     AddOrRemove,
 }
 
-fn make_gui(font: mq::text::Font) -> ui::Result<ui::Gui<Message>> {
+fn make_gui(font: &mq::text::Font) -> ui::Result<ui::Gui<Message>> {
     let mut gui = ui::Gui::new();
     let anchor = ui::Anchor(ui::HAnchor::Right, ui::VAnchor::Bottom);
     let text = ui::Drawable::text("Button", font);
@@ -18,7 +18,7 @@ fn make_gui(font: mq::text::Font) -> ui::Result<ui::Gui<Message>> {
 }
 
 fn make_label(assets: &common::Assets) -> ui::Result<ui::RcWidget> {
-    let texture = ui::Drawable::Texture(assets.texture);
+    let texture = ui::Drawable::Texture(assets.texture.clone());
     let label = ui::Label::new(texture, 0.3)?;
     Ok(ui::pack(label))
 }
@@ -31,7 +31,7 @@ struct State {
 
 impl State {
     fn new(assets: common::Assets) -> ui::Result<Self> {
-        let gui = make_gui(assets.font)?;
+        let gui = make_gui(&assets.font)?;
         let label = None;
         Ok(Self { assets, gui, label })
     }

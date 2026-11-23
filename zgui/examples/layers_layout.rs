@@ -10,7 +10,7 @@ enum Message {
 
 fn make_gui(assets: common::Assets) -> ui::Result<ui::Gui<Message>> {
     let mut gui = ui::Gui::new();
-    let text = ui::Drawable::text(" text", assets.font);
+    let text = ui::Drawable::text(" text", &assets.font);
     let texture = ui::Drawable::Texture(assets.texture);
     let button = ui::Button::new(texture, 0.2, gui.sender(), Message::Command)?;
     let label = ui::Label::new(text, 0.1)?;

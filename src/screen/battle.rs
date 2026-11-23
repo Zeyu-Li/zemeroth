@@ -62,8 +62,8 @@ fn line_with_info_button(
     message: Message,
 ) -> ZResult<Box<dyn ui::Widget>> {
     let h = line_heights().normal;
-    let font = assets::get().font;
-    let icon = textures().icons.info;
+    let font = &assets::get().font;
+    let icon = textures().icons.info.clone();
     let button = ui::Button::new(ui::Drawable::Texture(icon), h, gui.sender(), message)?;
     let mut line = Box::new(ui::HLayout::new().stretchable(true));
     line.add(Box::new(ui::Label::new(ui::Drawable::text(text, font), h)?));
@@ -74,7 +74,7 @@ fn line_with_info_button(
 
 // TODO: consider moving ui `build_*` functions to a sub-module
 fn build_panel_agent_info(gui: &mut Gui<Message>, state: &State, id: Id) -> ZResult<ui::RcWidget> {
-    let font = assets::get().font;
+    let font = &assets::get().font;
     let parts = state.parts();
     let st = parts.strength.get(id);
     let meta = parts.meta.get(id);
@@ -102,8 +102,9 @@ fn build_panel_agent_info(gui: &mut Gui<Message>, state: &State, id: Id) -> ZRes
             drawable_k: 0.3,
             ..Default::default()
         };
-        let label_dot = ui::Label::from_params(ui::Drawable::Texture(textures().dot), h, param)?
-            .with_color(dot_color);
+        let label_dot =
+            ui::Label::from_params(ui::Drawable::Texture(textures().dot.clone()), h, param)?
+                .with_color(dot_color);
         line.add(Box::new(label_dot));
         line.add(Box::new(ui::Spacer::new_horizontal(h * 0.1)));
         line.add(label(arg)?);
@@ -186,16 +187,19 @@ fn build_panel_agent_info(gui: &mut Gui<Message>, state: &State, id: Id) -> ZRes
                     };
                     let message = Message::LastingEffectInfo(effect.effect);
                     let text = ui::Drawable::text(text, font);
-                    let tex_info = ui::Drawable::Texture(textures().icons.info);
+                    let tex_info = ui::Drawable::Texture(textures().icons.info.clone());
                     let button_info = ui::Button::new(tex_info, h, gui.sender(), message)?;
                     let icon_effect = visualize::get_effect_icon(&effect.effect);
                     let param = ui::LabelParam {
                         drawable_k: 0.6,
                         ..Default::default()
                     };
-                    let label_effect =
-                        ui::Label::from_params(ui::Drawable::Texture(icon_effect), h, param)?
-                            .with_color(Color::new(1.0, 1.0, 1.0, 1.0));
+                    let label_effect = ui::Label::from_params(
+                        ui::Drawable::Texture(icon_effect.clone()),
+                        h,
+                        param,
+                    )?
+                    .with_color(Color::new(1.0, 1.0, 1.0, 1.0));
                     let mut line = Box::new(ui::HLayout::new().stretchable(true));
                     line.add(Box::new(label_effect));
                     line.add(Box::new(ui::Spacer::new_horizontal(h * 0.1)));
@@ -222,7 +226,7 @@ fn build_panel_agent_abilities(
     id: Id,
     mode: &SelectionMode,
 ) -> ZResult<Option<ui::RcWidget>> {
-    let font = assets::get().font;
+    let font = &assets::get().font;
     let parts = state.parts();
     let abilities = match parts.abilities.get_opt(id) {
         Some(abilities) => &abilities.0,
@@ -232,7 +236,10 @@ fn build_panel_agent_abilities(
     let h = line_heights().large;
     for ability in abilities {
         let icons = &assets::get().textures.icons.abilities;
-        let texture = *icons.get(&ability.ability).expect("No such icon found");
+        let texture = icons
+            .get(&ability.ability)
+            .expect("No such icon found")
+            .clone();
         let drawable = ui::Drawable::Texture(texture);
         let msg = Message::Ability(ability.ability);
         let mut button = ui::Button::new(drawable, h, gui.sender(), msg)?;
@@ -264,7 +271,7 @@ fn build_panel_agent_abilities(
 
 fn build_panel_end_turn(gui: &mut Gui<Message>) -> ZResult<ui::RcWidget> {
     let h = line_heights().large;
-    let tex = ui::Drawable::Texture(textures().icons.end_turn);
+    let tex = ui::Drawable::Texture(textures().icons.end_turn.clone());
     let button = ui::Button::new(tex, h, gui.sender(), Message::EndTurn)?;
     let layout = ui::VLayout::from_widget(Box::new(button));
     let anchor = ui::Anchor(ui::HAnchor::Right, ui::VAnchor::Bottom);
@@ -279,7 +286,7 @@ fn build_panel_ability_description(
     ability: &Ability,
     id: Id,
 ) -> ZResult<ui::RcWidget> {
-    let font = assets::get().font;
+    let font = &assets::get().font;
     let text = |s: &str| ui::Drawable::text(s, font);
     let h = line_heights().normal;
     let mut layout = Box::new(ui::VLayout::new().stretchable(true));
@@ -326,7 +333,7 @@ fn build_panel_ability_description(
 fn make_gui() -> ZResult<ui::Gui<Message>> {
     let mut gui = ui::Gui::new();
     let h = line_heights().large;
-    let icon = textures().icons.main_menu;
+    let icon = textures().icons.main_menu.clone();
     let button = ui::Button::new(ui::Drawable::Texture(icon), h, gui.sender(), Message::Exit)?;
     let layout = ui::VLayout::from_widget(Box::new(button));
     let anchor = ui::Anchor(ui::HAnchor::Left, ui::VAnchor::Top);
