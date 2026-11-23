@@ -19,6 +19,20 @@ use mq::{
     window,
 };
 
+/// Draws `text` one character at a time, without kerning.
+///
+/// Since 0.4.15, macroquad's `draw_text_ex` adds kerning offsets without
+/// multiplying them by `font_scale`, which scatters the glyphs of any text drawn
+/// through a world-space camera (where `font_scale` is far from 1). Drawing single
+/// characters skips kerning and keeps the text in line with `measure_text`.
+fn draw_text_without_kerning(text: &str, x: f32, y: f32, params: TextParams) {
+    let mut x = x;
+    let mut buf = [0; 4];
+    for character in text.chars() {
+        x += draw_text_ex(character.encode_utf8(&mut buf), x, y, params.clone()).width;
+    }
+}
+
 pub const SPRITE_COLOR: Color = Color::new(0.0, 0.0, 0.0, 1.0);
 pub const SPRITE_COLOR_INACTIVE: Color = Color::new(0.4, 0.4, 0.4, 0.5);
 pub const SPRITE_COLOR_BG: Color = Color::new(0.8, 0.8, 0.8, 0.5);
@@ -78,10 +92,10 @@ pub enum Drawable {
 }
 
 impl Drawable {
-    pub fn text(label: impl Into<String>, font: Font) -> Drawable {
+    pub fn text(label: impl Into<String>, font: &Font) -> Drawable {
         Drawable::Text {
             label: label.into(),
-            font,
+            font: font.clone(),
             // TODO: this field doesn't mean much with new macroquad since
             //   we're using camera_font_scale vefore rendering it anyway.
             //   But it's somewhat tricky to remove this so I'm putting this constant here for now.
@@ -91,12 +105,12 @@ impl Drawable {
 
     fn dimensions(&self) -> Rect {
         match *self {
-            Drawable::Texture(texture) => {
+            Drawable::Texture(ref texture) => {
                 Rect::new(0.0, 0.0, texture.width() as _, texture.height() as _)
             }
             Drawable::Text {
                 ref label,
-                font,
+                ref font,
                 font_size,
             } => {
                 let dimensions = measure_text(label, Some(font), font_size, 1.0);
@@ -138,7 +152,7 @@ impl Sprite {
 
     fn draw(&self) {
         match self.drawable {
-            Drawable::Texture(texture) => {
+            Drawable::Texture(ref texture) => {
                 draw_texture_ex(
                     texture,
                     self.pos.x,
@@ -152,23 +166,24 @@ impl Sprite {
             }
             Drawable::Text {
                 ref label,
-                font,
+                ref font,
                 font_size,
             } => {
                 // desired font size in camera space
                 let font_world_size = font_size as f32 * self.scale.x;
                 // let macroquad figure appropriate TextParams for currently active camera
                 let (font_size, font_scale, font_scale_aspect) = camera_font_scale(font_world_size);
-                draw_text_ex(
+                draw_text_without_kerning(
                     label,
                     self.pos.x,
                     self.pos.y + (self.dimensions.y + self.dimensions.h) * self.scale.y * 0.5,
                     TextParams {
                         font_size,
-                        font,
+                        font: Some(font),
                         font_scale,
                         font_scale_aspect,
                         color: self.color,
+                        ..Default::default()
                     },
                 );
             }
@@ -329,7 +344,11 @@ impl<Message: Clone> Gui<Message> {
 
     pub fn draw(&self) {
         let ui_coordinates = Rect::new(-self.aspect_ratio, -1.0, self.aspect_ratio * 2.0, 2.0);
-        set_camera(&Camera2D::from_display_rect(ui_coordinates));
+        let mut camera = Camera2D::from_display_rect(ui_coordinates);
+        // macroquad 0.4 flips the Y axis of cameras that draw to the screen;
+        // flip it back so that +Y keeps pointing down.
+        camera.zoom.y = -camera.zoom.y;
+        set_camera(&camera);
         for AnchoredWidget { widget, .. } in &self.anchored_widgets {
             widget.borrow().draw();
         }

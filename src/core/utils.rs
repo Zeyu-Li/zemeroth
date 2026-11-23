@@ -1,7 +1,35 @@
 use std::fmt::Debug;
 
-use quad_rand::compat::QuadRand;
 use rand::{distributions::uniform::SampleUniform, seq::SliceRandom, Rng};
+
+/// Adapts macroquad's global `quad_rand` generator to `rand::RngCore`.
+///
+/// `quad_rand::compat::QuadRand` isn't used because quad-rand's `rand` feature
+/// turns on rand's default features, whose `getrandom` dependency doesn't build
+/// for `wasm32-unknown-unknown`.
+struct QuadRand;
+
+impl rand::RngCore for QuadRand {
+    fn next_u32(&mut self) -> u32 {
+        quad_rand::rand()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        (u64::from(self.next_u32()) << 32) | u64::from(self.next_u32())
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        for chunk in dest.chunks_mut(4) {
+            let bytes = self.next_u32().to_le_bytes();
+            chunk.copy_from_slice(&bytes[..chunk.len()]);
+        }
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+        self.fill_bytes(dest);
+        Ok(())
+    }
+}
 
 pub fn zrng() -> impl rand::Rng {
     QuadRand

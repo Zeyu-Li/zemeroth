@@ -22,7 +22,7 @@ enum Message {
 }
 
 fn make_gui() -> ZResult<ui::Gui<Message>> {
-    let font = assets::get().font;
+    let font = &assets::get().font;
     let mut gui = ui::Gui::new();
     let h = utils::line_heights().large;
     let space = || Box::new(ui::Spacer::new_vertical(h / 8.0));

@@ -31,7 +31,7 @@ pub struct Confirm {
 
 impl Confirm {
     pub fn from_lines(lines: &[impl AsRef<str>], sender: Sender<Message>) -> ZResult<Self> {
-        let font = assets::get().font;
+        let font = &assets::get().font;
         let h = utils::line_heights().big;
         let mut layout = ui::VLayout::new();
         for line in lines {
@@ -47,7 +47,7 @@ impl Confirm {
     }
 
     pub fn from_widget(widget: Box<dyn ui::Widget>, sender: Sender<Message>) -> ZResult<Self> {
-        let font = assets::get().font;
+        let font = &assets::get().font;
         let mut gui = ui::Gui::new();
         let h = utils::line_heights().big;
         let mut layout = Box::new(ui::VLayout::new());

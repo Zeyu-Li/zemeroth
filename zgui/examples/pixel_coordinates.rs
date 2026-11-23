@@ -19,12 +19,15 @@ pub fn make_and_set_camera(_aspect_ratio: f32) -> Camera2D {
         w: mq::window::screen_width(),
         h: mq::window::screen_height(),
     };
-    let camera = Camera2D::from_display_rect(display_rect);
+    let mut camera = Camera2D::from_display_rect(display_rect);
+    // macroquad 0.4 flips the Y axis of cameras that draw to the screen;
+    // flip it back so that +Y keeps pointing down.
+    camera.zoom.y = -camera.zoom.y;
     set_camera(&camera);
     camera
 }
 
-fn make_gui(font: mq::text::Font) -> ui::Result<ui::Gui<Message>> {
+fn make_gui(font: &mq::text::Font) -> ui::Result<ui::Gui<Message>> {
     let mut gui = ui::Gui::new();
     let anchor = ui::Anchor(ui::HAnchor::Right, ui::VAnchor::Bottom);
     let text = ui::Drawable::text("Button", font);
@@ -45,7 +48,7 @@ fn draw_scene() {
 #[macroquad(crate_rename = "mq")]
 async fn main() {
     let assets = common::Assets::load().await.expect("Can't load assets");
-    let mut gui = make_gui(assets.font).expect("Can't create the gui");
+    let mut gui = make_gui(&assets.font).expect("Can't create the gui");
     loop {
         // Update the camera and the GUI.
         let aspect_ratio = common::aspect_ratio();

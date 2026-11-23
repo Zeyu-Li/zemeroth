@@ -9,19 +9,12 @@ use mq::{
 
 #[derive(Debug)]
 pub enum Err {
-    File(mq::file::FileError),
-    Font(mq::text::FontError),
+    Mq(mq::Error),
 }
 
-impl From<mq::file::FileError> for Err {
-    fn from(err: mq::file::FileError) -> Self {
-        Err::File(err)
-    }
-}
-
-impl From<mq::text::FontError> for Err {
-    fn from(err: mq::text::FontError) -> Self {
-        Err::Font(err)
+impl From<mq::Error> for Err {
+    fn from(err: mq::Error) -> Self {
+        Err::Mq(err)
     }
 }
 
@@ -36,7 +29,10 @@ pub fn make_and_set_camera(aspect_ratio: f32) -> Camera2D {
         w: aspect_ratio * 2.0,
         h: 2.0,
     };
-    let camera = Camera2D::from_display_rect(display_rect);
+    let mut camera = Camera2D::from_display_rect(display_rect);
+    // macroquad 0.4 flips the Y axis of cameras that draw to the screen;
+    // flip it back so that +Y keeps pointing down.
+    camera.zoom.y = -camera.zoom.y;
     set_camera(&camera);
     camera
 }

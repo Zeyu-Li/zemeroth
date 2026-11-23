@@ -7,6 +7,20 @@ use mq::{
     texture::{self, DrawTextureParams, Texture2D},
 };
 
+/// Draws `text` one character at a time, without kerning.
+///
+/// Since 0.4.15, macroquad's `draw_text_ex` adds kerning offsets without
+/// multiplying them by `font_scale`, which scatters the glyphs of any text drawn
+/// through a world-space camera (where `font_scale` is far from 1). Drawing single
+/// characters skips kerning and keeps the text in line with `measure_text`.
+fn draw_text_without_kerning(text: &str, x: f32, y: f32, params: text::TextParams) {
+    let mut x = x;
+    let mut buf = [0; 4];
+    for character in text.chars() {
+        x += text::draw_text_ex(character.encode_utf8(&mut buf), x, y, params.clone()).width;
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Facing {
     Left,
@@ -26,10 +40,12 @@ enum Drawable {
 impl Drawable {
     fn dimensions(&self) -> Rect {
         match *self {
-            Drawable::Texture(texture) => Rect::new(0.0, 0.0, texture.width(), texture.height()),
+            Drawable::Texture(ref texture) => {
+                Rect::new(0.0, 0.0, texture.width(), texture.height())
+            }
             Drawable::Text {
                 ref label,
-                font,
+                ref font,
                 font_size,
             } => {
                 let dimensions = text::measure_text(label, Some(font), font_size, 1.0);
@@ -103,17 +119,17 @@ impl Sprite {
         Self { data }
     }
 
-    pub fn from_texture(texture: Texture2D, height: f32) -> Self {
-        Self::from_drawable(Drawable::Texture(texture), height)
+    pub fn from_texture(texture: &Texture2D, height: f32) -> Self {
+        Self::from_drawable(Drawable::Texture(texture.clone()), height)
     }
 
-    pub fn from_text((label, font): (&str, Font), height: f32) -> Self {
+    pub fn from_text((label, font): (&str, &Font), height: f32) -> Self {
         // TODO: it'd be cool to move this to the drawing method (same as in zgui)
         let (font_size, _, _) = mq::text::camera_font_scale(height);
         Self::from_drawable(
             Drawable::Text {
                 label: label.to_string(),
-                font,
+                font: font.clone(),
                 font_size,
             },
             height,
@@ -126,10 +142,10 @@ impl Sprite {
     }
 
     pub fn from_textures(frames: &HashMap<String, Texture2D>, height: f32) -> Self {
-        let tex = *frames.get("").expect("missing default path");
+        let tex = frames.get("").expect("missing default path");
         let mut this = Self::from_texture(tex, height);
-        for (frame_name, &tex) in frames.iter() {
-            this.add_frame(frame_name.clone(), Drawable::Texture(tex));
+        for (frame_name, tex) in frames.iter() {
+            this.add_frame(frame_name.clone(), Drawable::Texture(tex.clone()));
         }
         this
     }
@@ -202,7 +218,7 @@ impl Sprite {
         match drawable {
             Drawable::Texture(texture) => {
                 texture::draw_texture_ex(
-                    *texture,
+                    texture,
                     data.pos.x,
                     data.pos.y,
                     data.color,
@@ -217,13 +233,13 @@ impl Sprite {
                 font,
                 font_size,
             } => {
-                text::draw_text_ex(
+                draw_text_without_kerning(
                     label,
                     data.pos.x,
                     data.pos.y + (data.dimensions.y + data.dimensions.h) * data.scale.y * 0.5,
                     text::TextParams {
                         font_size: *font_size,
-                        font: *font,
+                        font: Some(font),
                         font_scale: data.scale.x,
                         color: data.color,
                         ..Default::default()

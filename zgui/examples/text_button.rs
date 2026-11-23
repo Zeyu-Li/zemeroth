@@ -8,7 +8,7 @@ enum Message {
     Command,
 }
 
-fn make_gui(font: mq::text::Font) -> ui::Result<ui::Gui<Message>> {
+fn make_gui(font: &mq::text::Font) -> ui::Result<ui::Gui<Message>> {
     let mut gui = ui::Gui::new();
     let anchor = ui::Anchor(ui::HAnchor::Right, ui::VAnchor::Bottom);
     let text = ui::Drawable::text("Button", font);
@@ -21,7 +21,7 @@ fn make_gui(font: mq::text::Font) -> ui::Result<ui::Gui<Message>> {
 #[macroquad(crate_rename = "mq")]
 async fn main() {
     let assets = common::Assets::load().await.expect("Can't load assets");
-    let mut gui = make_gui(assets.font).expect("Can't create the gui");
+    let mut gui = make_gui(&assets.font).expect("Can't create the gui");
     loop {
         // Update the camera and the GUI.
         let aspect_ratio = common::aspect_ratio();
